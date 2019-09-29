@@ -1,8 +1,10 @@
 const path = require('path')
 const express = require('express')
 const hbs = require('hbs')
-
 const app = express()
+
+const forcast = require('./utils/forecast')
+const geoCode = require('./utils/geoCode')
 
 //define paths for Express config
 const publicDirectoryPath = path.join(__dirname, '../public')
@@ -40,7 +42,43 @@ app.get('/help', (req, res) => {
 })
 
 app.get('/weather', (req, res) => {
-    res.send('Weather')
+
+    if (!req.query.address){
+        return res.send({
+            error:'You must provide a search term'
+        })
+    }
+
+    geoCode(req.query.address, (error, {longitude, latitude, location} = {} )=>{
+
+        if (error){
+           return res.send({ error })}
+
+        forcast(longitude, latitude, (error, forcastData)=>{
+            const {summary} = forcastData
+
+            if (error){
+                return res.send({ error })}
+
+            return res.send({ 
+                location, 
+                summary,
+                forcastData
+            })
+        })
+    })
+})
+
+app.get('/products', (req, res)=>{
+    if (!req.query.search){
+        return res.send({
+            error: 'You must provide a search term'
+        })
+    }
+
+    res.send({
+        products: []
+    })
 })
 
 app.get('/help/*', (req, res) => {
